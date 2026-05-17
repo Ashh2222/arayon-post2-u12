@@ -1,4 +1,20 @@
 package com.empresa.pedidos.infraestructura.notificaciones;
 
-public class NotificacionEmail {
+import com.empresa.pedidos.dominio.puertos.ServicioNotificacion;
+import com.empresa.pedidos.eventos.PedidoProcesadoEvent;
+import org.springframework.context.event.EventListener;
+import org.springframework.stereotype.Component;
+
+@Component
+public class NotificacionEmail implements ServicioNotificacion {
+
+    @Override
+    @EventListener
+    public void notificar(PedidoProcesadoEvent evento) {
+
+        System.out.println(
+                "Email enviado para pedido: "
+                        + evento.pedido().getId()
+        );
+    }
 }
