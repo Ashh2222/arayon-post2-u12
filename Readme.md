@@ -1,286 +1,269 @@
-# Sistema Integrado de Gestión de Pedidos
+# Validación Arquitectónica y ADRs — Sistema de Pedidos
 
 ---
 
-# Arquitectura del Proyecto
+# Introducción
 
-El sistema fue organizado utilizando una arquitectura por capas inspirada en principios de arquitectura limpia.
+Este proyecto corresponde al PostContenido 2 de la Unidad 12.
+
+El objetivo principal fue extender el sistema de pedidos desarrollado previamente incorporando:
+
+- Validación arquitectónica automática con ArchUnit
+- Pipeline CI/CD con GitHub Actions
+- Documentación arquitectónica mediante ADRs
+- Verificación automática de restricciones arquitectónicas
+
+El proyecto implementa reglas de arquitectura ejecutables que garantizan el desacoplamiento correcto entre capas y automatiza su validación en cada push mediante GitHub Actions.
+
+---
+
+# Tecnologías Utilizadas
+
+- Java 21
+- Spring Boot
+- Maven
+- JUnit 5
+- ArchUnit 1.2.1
+- GitHub Actions
+- Git
+- H2 Database
+
+---
+
+# Validación Arquitectónica con ArchUnit
+
+Se implementó la clase:
 
 ```txt
-src/main/java/com/empresa/pedidos/
-
-├── dominio/
-├── aplicacion/
-├── infraestructura/
-├── adaptadores/
-├── eventos/
+src/test/java/com/empresa/pedidos/ReglasArquitectura.java
 ```
 
----
-
-# Descripción de las Capas
-
-## Dominio
-
-Contiene las entidades principales y las interfaces (puertos) del sistema.
-
-### Responsabilidades
-
-- Definir reglas del negocio
-- Definir contratos
-- Mantener independencia tecnológica
-
-### Ejemplos
-
-- Pedido
-- TipoPedido
-- EstadoPedido
-- ProcesadorPedido
-- RepositorioPedidos
+La cual contiene las reglas arquitectónicas ejecutables del sistema.
 
 ---
 
-## Aplicación
+# Reglas Implementadas
 
-Coordina el flujo principal del sistema y conecta los componentes.
+## Regla 1 — Dominio Aislado
 
-### Responsabilidades
+El dominio no puede depender de:
 
-- Orquestar procesos
-- Ejecutar casos de uso
+- infraestructura
+- adaptadores
+- Spring Framework
 
----
+### Objetivo
 
-## Infraestructura
-
-Implementa detalles técnicos y externos.
-
-### Responsabilidades
-
-- Persistencia
-- Base de datos
-- Notificaciones
-
-### Ejemplos
-
-- RepositorioPedidosJpa
-- NotificacionEmail
-- NotificacionLog
+Garantizar independencia del dominio y evitar acoplamiento tecnológico.
 
 ---
 
-## Adaptadores
+## Regla 2 — Controladores Desacoplados
 
-Contiene las implementaciones concretas de los patrones de diseño y el acceso REST.
+Los controladores REST no pueden acceder directamente a:
 
-### Responsabilidades
+- infraestructura
+- procesadores Strategy
 
-- Implementar lógica desacoplada
-- Conectar el sistema con clientes externos
+### Objetivo
 
-### Ejemplos
-
-- Procesadores Strategy
-- Factory
-- Facade
-- Controller REST
+Forzar el uso de la Facade como punto único de acceso.
 
 ---
 
-# Patrones de Diseño Implementados
+## Regla 3 — Puertos como Interfaces
 
-## 1. Strategy
+Todas las clases dentro de:
 
-### Problema identificado
+```txt
+dominio.puertos
+```
 
-El sistema original utilizaba múltiples condicionales `if/else` para calcular costos según el tipo de pedido, generando:
+deben ser interfaces.
 
-- Alto acoplamiento
-- Difícil mantenimiento
-- Violación del principio Open/Closed
+### Objetivo
 
-### Solución aplicada
+Mantener arquitectura hexagonal basada en puertos y adaptadores.
 
-Se creó una estrategia independiente para cada tipo de pedido:
+---
 
-- ProcesadorPedidoEstandar
-- ProcesadorPedidoExpress
-- ProcesadorPedidoInternacional
+## Regla 4 — Procesadores Implementan Puerto
 
-Cada clase implementa:
+Todos los procesadores deben implementar:
 
 ```java
 ProcesadorPedido
 ```
 
-### Beneficios obtenidos
+### Objetivo
 
-- Eliminación de condicionales complejos
-- Mayor extensibilidad
-- Bajo acoplamiento
-- Código más limpio
+Garantizar consistencia entre estrategias de procesamiento.
 
 ---
 
-## 2. Factory
+## Regla 5 — Infraestructura Aislada de REST
 
-### Problema identificado
+La infraestructura no puede acceder directamente a los controladores REST.
 
-Después de implementar múltiples estrategias, el sistema necesitaba decidir dinámicamente cuál utilizar según el tipo de pedido.
+### Objetivo
 
-Sin una Factory, el sistema seguiría dependiendo de múltiples condicionales.
+Mantener separación correcta entre capas.
 
-### Solución aplicada
+---
 
-Se implementó:
+# Ejecución de Reglas ArchUnit
 
-```java
-ProcesadorPedidoFactory
+## Ejecutar validación arquitectónica
+
+```bash
+./mvnw test -Dtest=ReglasArquitectura
 ```
 
-La Factory selecciona automáticamente el Strategy correcto utilizando el tipo de pedido.
-
-### Beneficios obtenidos
-
-- Centralización de creación
-- Eliminación de lógica repetitiva
-- Mejor mantenibilidad
-- Mayor desacoplamiento
-
 ---
 
-## 3. Observer
+# Resultado Esperado
 
-### Problema identificado
-
-El sistema original mezclaba la lógica principal con las notificaciones, provocando:
-
-- Dependencias innecesarias
-- Código difícil de extender
-- Violación del principio de responsabilidad única
-
-### Solución aplicada
-
-Se implementó un sistema de eventos utilizando:
-
-```java
-PedidoProcesadoEvent
+```txt
+Tests run: 5
+Failures: 0
+BUILD SUCCESS
 ```
 
-y dos listeners:
-
-- NotificacionEmail
-- NotificacionLog
-
-### Beneficios obtenidos
-
-- Desacoplamiento de notificaciones
-- Escalabilidad
-- Facilidad para agregar nuevos listeners
-- Mejor separación de responsabilidades
-
 ---
 
-## 4. Facade
+# GitHub Actions
 
-### Problema identificado
+Se implementó integración continua mediante:
 
-El controlador REST debía interactuar directamente con múltiples componentes internos, aumentando la complejidad y el acoplamiento.
-
-### Solución aplicada
-
-Se implementó:
-
-```java
-FachadaPedidos
+```txt
+.github/workflows/arquitectura.yml
 ```
 
-La fachada centraliza todo el flujo de procesamiento del pedido.
+---
 
-### Beneficios obtenidos
+# Pipeline CI/CD
 
-- Simplificación del controlador
-- Reducción de complejidad
-- Mejor organización del flujo
-- Punto único de acceso al sistema
+El pipeline ejecuta automáticamente:
+
+- reglas ArchUnit
+- pruebas unitarias
+- validación completa del proyecto
+
+en cada push y pull request.
 
 ---
 
-# Flujo Completo del Sistema
+# Workflow Implementado
 
-1. El cliente realiza un POST al endpoint REST.
-2. El Controller delega la solicitud a la Fachada.
-3. La Factory selecciona el Strategy adecuado.
-4. El pedido es procesado.
-5. El pedido es almacenado en la base de datos H2.
-6. Se publica un evento.
-7. Los listeners responden automáticamente.
+```yaml
+name: Validacion Arquitectonica
+```
 
 ---
 
-# Pruebas Implementadas
+# Violación Arquitectónica Intencional
 
-Se realizaron pruebas para validar:
+Se realizó una violación arquitectónica intencional agregando una dependencia de infraestructura dentro del dominio:
 
-- Procesamiento Strategy
-- Selección Factory
-- Publicación Observer
-- Funcionamiento Facade
-- Reglas arquitectónicas con ArchUnit
-- Integración SpringBootTest
+```java
+private RepositorioPedidosJpa repositorio;
+```
 
----
+dentro de:
 
-# Resultados SonarQube
-
-Se realizó análisis estático de calidad utilizando SonarQube.
-
-## Resultados obtenidos
-
-| Métrica | Resultado |
-|---|---|
-| Quality Gate | PASSED |
-| Maintainability | A |
-| Reliability | A |
-| Security | D |
-| Duplications | 0% |
+```txt
+Pedido.java
+```
 
 ---
 
-# Evidencias Visuales
+# Resultado
 
-Todas las Evidencias Visuales se encuentran en la carpeta
+ArchUnit detectó automáticamente la violación:
+
+```txt
+Architecture Violation
+```
+
+y GitHub Actions marcó el pipeline en rojo.
+
+Posteriormente la violación fue revertida y el pipeline volvió a ejecutarse correctamente.
+
+---
+
+# ADRs
+
+Se documentaron las decisiones arquitectónicas principales utilizando ADRs.
+
+Ubicación:
+
+```txt
+docs/adr/
+```
+
+---
+
+# ADR Implementados
+
+## ADR-001
+
+Arquitectura Hexagonal para aislar el dominio.
+
+---
+
+## ADR-002
+
+Factory + Strategy para procesamiento de pedidos.
+
+---
+
+## ADR-003
+
+Observer mediante Spring Events.
+
+---
+
+# Estructura Final del Proyecto
+
+```txt
+.github/workflows/
+└── arquitectura.yml
+
+docs/adr/
+├── ADR-001.md
+├── ADR-002.md
+├── ADR-003.md
+
+src/test/java/com/empresa/pedidos/
+└── ReglasArquitectura.java
+```
+
+---
+
+# Capturas
+
+Las evidencias del laboratorio se encuentran en:
+
 ```txt
 EvidenciaVisual/
 ```
+
 ---
 
 # Ejecución del Proyecto
 
-## Ejecutar aplicación
+## Ejecutar validación arquitectónica
 
 ```bash
-./mvnw spring-boot:run
+./mvnw test -Dtest=ReglasArquitectura
 ```
 
 ---
 
-## Ejecutar pruebas
+## Ejecutar pruebas completas
 
 ```bash
-./mvnw test
+./mvnw verify
 ```
 
 ---
-
-## Ejecutar SonarQube
-
-```bash
-./mvnw verify sonar:sonar \
--Dsonar.host.url=http://localhost:9000 \
--Dsonar.token=TOKEN \
--Dsonar.projectKey=pedidos
-```
-
----
-
