@@ -30,6 +30,9 @@ jobs:
           path: ~/.m2
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
 
+      - name: Dar permisos a mvnw
+        run: chmod +x mvnw
+
       - name: Ejecutar reglas ArchUnit
         run: ./mvnw test -Dtest=ReglasArquitectura --no-transfer-progress
 
